@@ -1,3 +1,4 @@
 [submodule "third_parties/libmip"]
-	path = third_parties/libmip
-	url = https://github.com/arnaud-ramey/libmip.git
+  path = third_parties/libmip
+  url = https://github.com/arnaud-ramey/libmip.git
+  branch = master
