@@ -133,12 +133,11 @@ protected:
   //////////////////////////////////////////////////////////////////////////////
   //! https://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
   template <typename T> int signum(const T val) {
-    return (T(0) < val) - (val < T(0));
+    return (val >= T(0)? 1 : -1);
   }
 
   bool speed2ticks(const double & v_ms, const double & w_rads,
                    int & v_int, int & w_int) {
-    printf("speed2ticks(%g, %g)\n", v_ms, w_rads);
     if (fabs(v_ms) > .95 || fabs(w_rads) > 17) {
       ROS_WARN("(v:%g, w:%g) out of bounds!", v_ms, w_rads);
       return false;
@@ -158,6 +157,7 @@ protected:
     else // CRAZY: W = 0.7208400618386 * b2 + 0.0191642762841
       w_int = clamp(1.38727028773812161461 * w_rads - 0.02658603107493626709, -32, 32)
            + 32 * signum(w_rads);
+    printf("speed2ticks(%g, %g) -> (%i, %i)\n", v_ms, w_rads, v_int, w_int);
     return true;
   } // end speed2ticks
 
