@@ -1,6 +1,8 @@
 <launch>
 <param name="ip" value="12"/>
-<node pkg="rosmip" type="rosmip.exe" name="rosmip"
-      args=""
+<node pkg="rosmip" type="rosmip.exe" name="rosmip" required="true" output="screen"
+      args="_device_mac:=00:19:0E:16:AF:22  _mip_mac:=D0:39:72:B7:AF:66"
 />
+<!--
+-->
 </launch>

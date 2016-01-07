@@ -20,6 +20,7 @@ catkin_package(
 )
 ### 7 - Libraries/Executables to build (add_library()/add_executable()/target_link_libraries())
 include_directories(third_parties  include  src  ${catkin_INCLUDE_DIRS})
+ADD_SUBDIRECTORY(third_parties)
 ADD_SUBDIRECTORY(src)
 ### 8 - Tests to build (catkin_add_gtest())
 #~ ADD_SUBDIRECTORY(test)

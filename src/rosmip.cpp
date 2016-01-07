@@ -42,6 +42,11 @@ ________________________________________________________________________________
 int main(int argc, char **argv) {
   ros::init(argc, argv, "rosmip");
   Rosmip mip;
-  ros::spin();
+  ros::Rate rate(100);
+  while(ros::ok()) {
+    mip.spinOnce();
+    ros::spinOnce();
+    rate.sleep();
+  }
   return 0;
 }
