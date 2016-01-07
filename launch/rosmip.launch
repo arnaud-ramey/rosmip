@@ -1,0 +1,6 @@
+<launch>
+<param name="ip" value="12"/>
+<node pkg="rosmip" type="rosmip.exe" name="rosmip"
+      args=""
+/>
+</launch>
