@@ -59,6 +59,8 @@ public:
     _battery_percentage_pub = _nh_private.advertise<std_msgs::Float32>("battery_percentage", 1);
     _status_pub = _nh_private.advertise<std_msgs::String>("status", 1);
     _odometer_reading_pub = _nh_private.advertise<std_msgs::Float32>("odometer_reading", 1);
+    _absspeed_pub = _nh_private.advertise<std_msgs::Float32>("absspeed", 1);
+    _last_odom = -1;
     // create subscribers
     _speed_sub = _nh_private.subscribe("speed", 1, &Rosmip::speed_cb, this);
 
@@ -84,8 +86,9 @@ public:
       _status_battery_stamp = now;
       request_battery_voltage();
     }
-    if (_odometer_reading_pub.getNumSubscribers()
-        && (now - _odometer_reading_stamp).toSec() > 1) {
+    if ((_odometer_reading_pub.getNumSubscribers()
+         || _absspeed_pub.getNumSubscribers())
+        && (now - _odometer_reading_stamp).toSec() > .3) {
       _odometer_reading_stamp = now;
       request_odometer_reading();
     }
@@ -96,6 +99,36 @@ public:
   //////////////////////////////////////////////////////////////////////////////
 
 protected:
+  //////////////////////////////////////////////////////////////////////////////
+
+  //! extend this function to add behaviours upon reception of a notification
+  virtual void notification_post_hook(MipCommand cmd, const std::vector<int> & /*values*/) {
+    ros::Time now = ros::Time::now();
+    if (cmd == CMD_MIP_STATUS) {
+      // MiP spontaneously sends its status periodically
+      _status_battery_stamp = now;
+      _float_msg.data = get_battery_voltage();
+      _battery_voltage_pub.publish(_float_msg);
+      _float_msg.data = get_battery_percentage();
+      _battery_percentage_pub.publish(_float_msg);
+      _string_msg.data = get_status2str();
+      _status_pub.publish(_string_msg);
+    }
+    if (cmd == CMD_ODOMETER_READING) {
+      // compute speed (first derivative)
+      if (_last_odom > 0) {
+        double speed = (get_odometer_reading() - _last_odom)
+            / (now - _last_odom_stamp).toSec();
+        _float_msg.data = speed;
+        _absspeed_pub.publish(_float_msg);
+      }
+      _last_odom_stamp = now;
+      _last_odom = get_odometer_reading();
+      // publish odom
+      _float_msg.data = get_odometer_reading();
+      _odometer_reading_pub.publish(_float_msg);
+    }
+  } // end notification_post_hook();
 
   //////////////////////////////////////////////////////////////////////////////
   //! https://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
@@ -130,26 +163,6 @@ protected:
 
   //////////////////////////////////////////////////////////////////////////////
 
-  //! extend this function to add behaviours upon reception of a notification
-  virtual void notification_post_hook(MipCommand cmd, const std::vector<int> & /*values*/) {
-    if (cmd == CMD_MIP_STATUS) {
-      // MiP spontaneously sends its status periodically
-      _status_battery_stamp = ros::Time::now();
-      _float_msg.data = get_battery_voltage();
-      _battery_voltage_pub.publish(_float_msg);
-      _float_msg.data = get_battery_percentage();
-      _battery_percentage_pub.publish(_float_msg);
-      _string_msg.data = get_status2str();
-      _status_pub.publish(_string_msg);
-    }
-    if (cmd == CMD_ODOMETER_READING) {
-      _float_msg.data = get_odometer_reading();
-      _odometer_reading_pub.publish(_float_msg);
-    }
-  } // end notification_post_hook();
-
-  //////////////////////////////////////////////////////////////////////////////
-
   void speed_cb(const geometry_msgs::TwistConstPtr & msg) {
     int v_int, w_int;
     if (!speed2ticks(msg->linear.x, msg->angular.z, v_int, w_int)) {
@@ -170,7 +183,9 @@ protected:
   ros::Publisher _battery_voltage_pub, _battery_percentage_pub;
   ros::Publisher _status_pub;
   ros::Time _status_battery_stamp;
-  ros::Publisher _odometer_reading_pub;
+  ros::Publisher _odometer_reading_pub, _absspeed_pub;
+  double _last_odom;
+  ros::Time _last_odom_stamp;
   ros::Time _odometer_reading_stamp;
   std_msgs::Float32 _float_msg;
   std_msgs::String _string_msg;
