@@ -25,8 +25,8 @@
   <param name="scale_angular" value="15"/>
   <remap from="/cmd_vel" to="/rosmip/speed"/>
 -->
-  <param name="scale_linear" value="1"/>
-  <param name="scale_angular" value="2"/>
+  <param name="scale_linear" value="0.6"/>
+  <param name="scale_angular" value="2.5"/>
   <remap from="/cmd_vel" to="/rosmip/cmd_vel"/>
   <remap from="/sound" to="/rosmip/sound"/>
 </node>

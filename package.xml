@@ -12,8 +12,9 @@
   <buildtool_depend>catkin</buildtool_depend>
   <depend>roscpp</depend>
   <depend>roslib</depend>
+  <depend>nav_msgs</depend>
   <depend>std_msgs</depend>
-  <depend>pulse</depend>
+  <depend>tf</depend>
   <export>
         <rosdoc config="rosdoc.yaml" /> <!-- http://wiki.ros.org/rosdoc_lite -->
       <cpp cflags="-I${prefix} -I${prefix}/build"

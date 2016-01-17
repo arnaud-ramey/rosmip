@@ -5,7 +5,7 @@ project(rosmip)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra") # add extra warnings
 ### 3 - Find other CMake/Catkin packages needed for build
 find_package(catkin REQUIRED COMPONENTS roscpp roslib
-                                        std_msgs)
+                                        nav_msgs  std_msgs  tf)
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/third_parties/libmip)
 find_package( GLIB REQUIRED )
 include_directories(${GLIB_INCLUDE_DIRS})
@@ -16,7 +16,7 @@ include_directories(${GLIB_INCLUDE_DIRS})
 ### 6 - Specify package build info export (catkin_package())
 catkin_package(
   INCLUDE_DIRS   third_parties  include  src
-  CATKIN_DEPENDS roscpp roslib std_msgs
+  CATKIN_DEPENDS roscpp roslib  nav_msgs  std_msgs  tf
 )
 ### 7 - Libraries/Executables to build (add_library()/add_executable()/target_link_libraries())
 include_directories(third_parties  include  src  ${catkin_INCLUDE_DIRS})

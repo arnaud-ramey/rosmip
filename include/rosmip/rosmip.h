@@ -27,12 +27,13 @@ ________________________________________________________________________________
 #ifndef ROSMIP_H
 #define ROSMIP_H
 
+#include <ros/ros.h>
+#include <geometry_msgs/Twist.h>
+#include <nav_msgs/Odometry.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Int8.h>
 #include <std_msgs/String.h>
-#include <geometry_msgs/Twist.h>
-#include <ros/ros.h>
-#include <nav_msgs/Odometry.h>
+#include <tf/transform_broadcaster.h>
 // libmip
 #include "libmip/src/bluetooth_mac2device.h"
 #include "libmip/src/gattmip.h"
@@ -44,6 +45,7 @@ public:
     std::string device_mac, mip_mac;
     _nh_private.param("device_mac", device_mac, device_mac);
     _nh_private.param("mip_mac", mip_mac, mip_mac);
+    _nh_private.param("use_odometry_speed", _use_odometry_speed, false);
     if (device_mac.empty() || mip_mac.empty()) {
       ROS_FATAL("Parameters 'device_mac' and 'mip_mac' must be set.");
       ros::shutdown();
@@ -57,6 +59,9 @@ public:
     }
     ROS_INFO("Succesfully connected device MAC '%s' to MIP with MAC '%s' :)",
              device_mac.c_str(), mip_mac.c_str());
+    // reset data
+    _last_odometer_reading = -1;
+    _x = _y = _th = _last_v = _last_w = _last_absspeed = 0; // reset odometry
     // advertise publishers
     _battery_voltage_pub = _nh_private.advertise<std_msgs::Float32>("battery_voltage", 1);
     _battery_percentage_pub = _nh_private.advertise<std_msgs::Float32>("battery_percentage", 1);
@@ -64,9 +69,6 @@ public:
     _odometer_reading_pub = _nh_private.advertise<std_msgs::Float32>("odometer_reading", 1);
     _odom_pub = _nh_private.advertise<nav_msgs::Odometry>("odom", 50);
     _absspeed_pub = _nh_private.advertise<std_msgs::Float32>("absspeed", 1);
-    _last_odom = -1;
-    _last_v = 0;
-    _last_w = 0;
     // create subscribers
     _speed_sub = _nh_private.subscribe("speed", 1, &Rosmip::speed_cb, this);
     _sound_sub = _nh_private.subscribe("sound", 1, &Rosmip::sound_cb, this);
@@ -90,19 +92,22 @@ public:
     if ((_status_pub.getNumSubscribers()
          || _battery_percentage_pub.getNumSubscribers()
          || _battery_voltage_pub.getNumSubscribers())
-        && (now - _status_battery_stamp).toSec() > 1) {
-      _status_battery_stamp = now;
+        && (now - _status_battery_request_stamp).toSec() > 1) {
+      _status_battery_request_stamp = now;
       request_battery_voltage();
     }
     if ((_odometer_reading_pub.getNumSubscribers()
+         || _odom_pub.getNumSubscribers()
          || _absspeed_pub.getNumSubscribers())
-        && (now - _odometer_reading_stamp).toSec() > .2) { // 5 Hz
-      _odometer_reading_stamp = now;
+        && (now - _last_odometer_request_stamp).toSec() > .2) { // 5 Hz
+      _last_odometer_request_stamp = now;
       request_odometer_reading();
     }
+    if ((now - _last_odometry_pub_stamp).toSec() > .1) // 10 Hz
+      refresh_odometry_tf(now);
     pump_up_callbacks();
     return true;
-  }
+  } // end spinOnce()
 
   //////////////////////////////////////////////////////////////////////////////
 
@@ -110,8 +115,78 @@ protected:
   //////////////////////////////////////////////////////////////////////////////
 
   void cmd_vel_cb(const geometry_msgs::TwistConstPtr & msg) {
-    continuous_drive_metric(msg->linear.x, msg->angular.z);
+    _last_v = msg->linear.x;
+    _last_w = msg->angular.z;
+    continuous_drive_metric(_last_v, _last_w);
   }
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  //! http://wiki.ros.org/navigation/Tutorials/RobotSetup/Odom
+  //! compute odometry in a typical way given the velocities of the robot
+  void refresh_odometry_tf(const ros::Time & now) {
+    double dt = (now - _last_odometry_pub_stamp).toSec();
+    // store new values
+    _last_odometry_pub_stamp = now;
+    double curr_v = _last_v;
+    if (_use_odometry_speed)
+      curr_v = (_last_v > 0 ? 1 : -1) * _last_absspeed;
+    double delta_x = (curr_v * cos(_th)) * dt;
+    double delta_y = (curr_v * sin(_th)) * dt;
+    double delta_th = _last_w * dt;
+    _x += delta_x;
+    _y += delta_y;
+    _th += delta_th;
+
+    //since all odometry is 6DOF we'll need a quaternion created from yaw
+    geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(_th);
+    //first, we'll publish the transform over tf
+    _odom_trans.header.stamp = now;
+    _odom_trans.header.frame_id = "odom";
+    _odom_trans.child_frame_id = "base_link";
+    _odom_trans.transform.translation.x = _x;
+    _odom_trans.transform.translation.y = _y;
+    _odom_trans.transform.translation.z = 0.0;
+    _odom_trans.transform.rotation = odom_quat;
+
+    //send the transform
+    odom_broadcaster.sendTransform(_odom_trans);
+
+    //next, we'll publish the odometry message over ROS
+    _odom.header.stamp = now;
+    _odom.header.frame_id = "odom";
+    //set the position
+    _odom.pose.pose.position.x = _x;
+    _odom.pose.pose.position.y = _y;
+    _odom.pose.pose.position.z = 0.0;
+    _odom.pose.pose.orientation = odom_quat;
+    //set the velocity
+    _odom.child_frame_id = "base_link";
+    _odom.twist.twist.linear.x = curr_v;
+    _odom.twist.twist.linear.y = 0;
+    _odom.twist.twist.angular.z = _last_w;
+    //publish the message
+    _odom_pub.publish(_odom);
+  } // end refresh_odometry_tf();
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  void odometer_reading_cb(const ros::Time & now) {
+    // compute speed (first derivative)
+    double new_odom = get_odometer_reading();
+    double dt = (now - _last_odometer_reading_stamp).toSec();
+    if (_last_odometer_reading > 0) {
+      _last_absspeed = (new_odom - _last_odometer_reading) / dt;
+      _float_msg.data = _last_absspeed;
+      _absspeed_pub.publish(_float_msg);
+    }
+    // store new values
+    _last_odometer_reading_stamp = now;
+    _last_odometer_reading = new_odom;
+    // publish odometer reading
+    _float_msg.data = new_odom;
+    _odometer_reading_pub.publish(_float_msg);
+  } // end odometer_reading_cb();
 
   //////////////////////////////////////////////////////////////////////////////
 
@@ -120,7 +195,7 @@ protected:
     ros::Time now = ros::Time::now();
     if (cmd == CMD_MIP_STATUS) {
       // MiP spontaneously sends its status periodically
-      _status_battery_stamp = now;
+      _status_battery_request_stamp = now;
       _float_msg.data = get_battery_voltage();
       _battery_voltage_pub.publish(_float_msg);
       _float_msg.data = get_battery_percentage();
@@ -129,18 +204,7 @@ protected:
       _status_pub.publish(_string_msg);
     }
     if (cmd == CMD_ODOMETER_READING) {
-      // compute speed (first derivative)
-      if (_last_odom > 0) {
-        double speed = (get_odometer_reading() - _last_odom)
-            / (now - _last_odom_stamp).toSec();
-        _float_msg.data = speed;
-        _absspeed_pub.publish(_float_msg);
-      }
-      _last_odom_stamp = now;
-      _last_odom = get_odometer_reading();
-      // publish odom
-      _float_msg.data = get_odometer_reading();
-      _odometer_reading_pub.publish(_float_msg);
+      odometer_reading_cb(now);
     }
   } // end notification_post_hook();
 
@@ -170,7 +234,7 @@ protected:
       w_int = clamp(2.39382382344084006941 * w_rads + 1.6460078602299454762, -32, 32);
     else // CRAZY: W = 0.7208400618386 * b2 + 0.0191642762841
       w_int = clamp(1.38727028773812161461 * w_rads - 0.02658603107493626709, -32, 32)
-           + 32 * signum(w_rads);
+          + 32 * signum(w_rads);
     printf("speed2ticks(%g, %g) -> (%i, %i)\n", v_ms, w_rads, v_int, w_int);
     return true;
   } // end speed2ticks
@@ -199,16 +263,20 @@ protected:
 
   GMainLoop *main_loop;
   ros::NodeHandle _nh_public, _nh_private;
+  ros::Time _status_battery_request_stamp;
+  double _last_odometer_reading, _last_v, _last_w, _x, _y, _th, _last_absspeed;
+  bool _use_odometry_speed;
+  nav_msgs::Odometry _odom;
+  geometry_msgs::TransformStamped _odom_trans;
+  ros::Time _last_odometer_request_stamp, _last_odometer_reading_stamp;
+  ros::Time _last_odometry_pub_stamp;
+  std_msgs::Float32 _float_msg;
+  std_msgs::String _string_msg;
   // publishers
   ros::Publisher _battery_voltage_pub, _battery_percentage_pub;
   ros::Publisher _status_pub;
-  ros::Time _status_battery_stamp;
   ros::Publisher _odometer_reading_pub, _absspeed_pub, _odom_pub;
-  double _last_odom, _last_v, _last_w;
-  ros::Time _last_odom_stamp;
-  ros::Time _odometer_reading_stamp;
-  std_msgs::Float32 _float_msg;
-  std_msgs::String _string_msg;
+  tf::TransformBroadcaster odom_broadcaster;
   // subscribers
   ros::Subscriber _cmd_vel_sub, _speed_sub, _sound_sub;
 }; // end class Rosmip
