@@ -5,7 +5,7 @@
   Use the D pad while pressing and holding the left trigger button (5) to control.
 -->
 <node pkg="joy" type="joy_node" name="joy" output="screen" >
-  <param name="dev" value="/dev/input/js2" />
+  <param name="dev" value="/dev/input/js1" />
   <param name="autorepeat_rate" value="25" />
 </node>
 
@@ -19,9 +19,15 @@
 -->
 <node pkg="rosmip" type="mip_teleop_joy.py" name="teleop" output="screen">
   <param name="axis_linear" value="1"/>
-  <param name="axis_angular" value="0"/>
+  <param name="axis_angular" value="2"/>
+<!--
   <param name="scale_linear" value=".5"/>
   <param name="scale_angular" value="15"/>
   <remap from="/cmd_vel" to="/rosmip/speed"/>
+-->
+  <param name="scale_linear" value="1"/>
+  <param name="scale_angular" value="2"/>
+  <remap from="/cmd_vel" to="/rosmip/cmd_vel"/>
+  <remap from="/sound" to="/rosmip/sound"/>
 </node>
 </launch>

@@ -28,9 +28,12 @@ ________________________________________________________________________________
 #define ROSMIP_H
 
 #include <std_msgs/Float32.h>
+#include <std_msgs/Int8.h>
 #include <std_msgs/String.h>
 #include <geometry_msgs/Twist.h>
 #include <ros/ros.h>
+#include <nav_msgs/Odometry.h>
+// libmip
 #include "libmip/src/bluetooth_mac2device.h"
 #include "libmip/src/gattmip.h"
 
@@ -59,10 +62,15 @@ public:
     _battery_percentage_pub = _nh_private.advertise<std_msgs::Float32>("battery_percentage", 1);
     _status_pub = _nh_private.advertise<std_msgs::String>("status", 1);
     _odometer_reading_pub = _nh_private.advertise<std_msgs::Float32>("odometer_reading", 1);
+    _odom_pub = _nh_private.advertise<nav_msgs::Odometry>("odom", 50);
     _absspeed_pub = _nh_private.advertise<std_msgs::Float32>("absspeed", 1);
     _last_odom = -1;
+    _last_v = 0;
+    _last_w = 0;
     // create subscribers
     _speed_sub = _nh_private.subscribe("speed", 1, &Rosmip::speed_cb, this);
+    _sound_sub = _nh_private.subscribe("sound", 1, &Rosmip::sound_cb, this);
+    _cmd_vel_sub = _nh_private.subscribe("cmd_vel", 1, &Rosmip::cmd_vel_cb, this);
 
     play_sound(23); // oh yeah
   }
@@ -88,7 +96,7 @@ public:
     }
     if ((_odometer_reading_pub.getNumSubscribers()
          || _absspeed_pub.getNumSubscribers())
-        && (now - _odometer_reading_stamp).toSec() > .3) {
+        && (now - _odometer_reading_stamp).toSec() > .2) { // 5 Hz
       _odometer_reading_stamp = now;
       request_odometer_reading();
     }
@@ -99,6 +107,12 @@ public:
   //////////////////////////////////////////////////////////////////////////////
 
 protected:
+  //////////////////////////////////////////////////////////////////////////////
+
+  void cmd_vel_cb(const geometry_msgs::TwistConstPtr & msg) {
+    continuous_drive_metric(msg->linear.x, msg->angular.z);
+  }
+
   //////////////////////////////////////////////////////////////////////////////
 
   //! extend this function to add behaviours upon reception of a notification
@@ -177,20 +191,26 @@ protected:
 
   //////////////////////////////////////////////////////////////////////////////
 
+  void sound_cb(const std_msgs::Int8ConstPtr & msg) {
+    play_sound((unsigned int) msg->data);
+  } // end sound_cb();
+
+  //////////////////////////////////////////////////////////////////////////////
+
   GMainLoop *main_loop;
   ros::NodeHandle _nh_public, _nh_private;
   // publishers
   ros::Publisher _battery_voltage_pub, _battery_percentage_pub;
   ros::Publisher _status_pub;
   ros::Time _status_battery_stamp;
-  ros::Publisher _odometer_reading_pub, _absspeed_pub;
-  double _last_odom;
+  ros::Publisher _odometer_reading_pub, _absspeed_pub, _odom_pub;
+  double _last_odom, _last_v, _last_w;
   ros::Time _last_odom_stamp;
   ros::Time _odometer_reading_stamp;
   std_msgs::Float32 _float_msg;
   std_msgs::String _string_msg;
   // subscribers
-  ros::Subscriber _speed_sub;
+  ros::Subscriber _cmd_vel_sub, _speed_sub, _sound_sub;
 }; // end class Rosmip
 
 #endif // ROSMIP_H

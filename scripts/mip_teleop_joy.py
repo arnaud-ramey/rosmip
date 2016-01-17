@@ -36,16 +36,28 @@
 import roslib; roslib.load_manifest('rosmip')
 import rospy
 import sensor_msgs
+import std_msgs
 import geometry_msgs
 
+from std_msgs.msg import Int8
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Twist
 
 def mycallback(joy):
+  global laser_before
   vel = geometry_msgs.msg.Twist()
   vel.linear.x = (joy.axes[axis_linear] * scale_linear);
   vel.angular.z = (joy.axes[axis_angular] * scale_angular);
-  pub.publish(vel)
+  cmd_vel_pub.publish(vel)
+  global laser_before
+  if (joy.buttons[laser_button]):
+    if (laser_before == False):
+      laser_before = True
+      sound = std_msgs.msg.Int8();
+      sound.data = 103;
+      sound_pub.publish(sound);
+  else:
+    laser_before = False
 
 if __name__ == '__main__':
   name ='mip_teleop_joy'
@@ -54,6 +66,10 @@ if __name__ == '__main__':
   axis_angular = rospy.get_param('~axis_angular', 2)
   scale_linear = rospy.get_param('~scale_linear', 1.0)
   scale_angular = rospy.get_param('~scale_angular', 1.0)
-  sub = rospy.Subscriber("joy", sensor_msgs.msg.Joy, mycallback)
-  pub = rospy.Publisher("cmd_vel", geometry_msgs.msg.Twist, queue_size=1)
+  laser_button = rospy.get_param('~laser_button', 4)
+  # publishers and subscribers
+  joy_sub = rospy.Subscriber("joy", sensor_msgs.msg.Joy, mycallback)
+  cmd_vel_pub = rospy.Publisher("cmd_vel", geometry_msgs.msg.Twist, queue_size=1)
+  sound_pub = rospy.Publisher("sound", std_msgs.msg.Int8, queue_size=1)
+  laser_before = False
   rospy.spin()
