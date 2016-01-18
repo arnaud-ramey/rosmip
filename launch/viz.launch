@@ -1,21 +1,24 @@
 <launch>
-<!--
-<node pkg="rqt_plot" type="rqt_plot" name="odom_plot"
-      args="/rosmip/odometer_reading/data"/>
-<node pkg="rqt_plot" type="rqt_plot" name="absspeed_plot"
-      args="/rosmip/absspeed/data"/>
--->
+<arg name="robot" default="rosmip" />
+<group ns="$(arg robot)">
+  <!--
+  <node pkg="rqt_plot" type="rqt_plot" name="odom_plot"
+        args="odometer_reading/data"/>
+  -->
+  <node pkg="rqt_plot" type="rqt_plot" name="absspeed_plot"
+        args="absspeed/data tilt"/>
 
-<node pkg="rviz" type="rviz" name="rviz" output="screen"
-      args="--display-config $(find rosmip)/config/rviz_mip.rviz" />
+  <node pkg="rviz" type="rviz" name="rviz" output="screen"
+        args="--display-config $(find rosmip)/config/rviz_mip.rviz" />
 
-<!-- camera node -->
-<remap from="image_raw" to="rgb"/>
-<node name="uvc_cam" pkg="uvc_camera" type="uvc_camera_node"
-    output="screen" respawn="false" >
-  <param name="device" value="/dev/video1" /> <!-- the device to use -->
-  <param name="width" value="320" />
-  <param name="height" value="240" />
-  <param name="fps" value="30" /> <!-- frames per second -->
-</node>
+  <!-- camera node -->
+  <remap from="image_raw" to="rgb"/>
+  <node name="uvc_cam" pkg="uvc_camera" type="uvc_camera_node"
+      output="screen" respawn="false" >
+    <param name="device" value="/dev/video1" /> <!-- the device to use -->
+    <param name="width" value="320" />
+    <param name="height" value="240" />
+    <param name="fps" value="30" /> <!-- frames per second -->
+  </node>
+</group>
 </launch>

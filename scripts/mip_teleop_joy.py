@@ -39,7 +39,7 @@ import sensor_msgs
 import std_msgs
 import geometry_msgs
 
-from std_msgs.msg import Int8
+from std_msgs.msg import Int16
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Twist
 
@@ -53,7 +53,7 @@ def mycallback(joy):
   if (joy.buttons[laser_button]):
     if (laser_before == False):
       laser_before = True
-      sound = std_msgs.msg.Int8();
+      sound = std_msgs.msg.Int16();
       sound.data = 103;
       sound_pub.publish(sound);
   else:
@@ -70,6 +70,6 @@ if __name__ == '__main__':
   # publishers and subscribers
   joy_sub = rospy.Subscriber("joy", sensor_msgs.msg.Joy, mycallback)
   cmd_vel_pub = rospy.Publisher("cmd_vel", geometry_msgs.msg.Twist, queue_size=1)
-  sound_pub = rospy.Publisher("sound", std_msgs.msg.Int8, queue_size=1)
+  sound_pub = rospy.Publisher("sound", std_msgs.msg.Int16, queue_size=1)
   laser_before = False
   rospy.spin()
