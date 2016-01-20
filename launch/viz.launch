@@ -4,12 +4,16 @@
   <!--
   <node pkg="rqt_plot" type="rqt_plot" name="odom_plot"
         args="odometer_reading/data"/>
-  -->
   <node pkg="rqt_plot" type="rqt_plot" name="absspeed_plot"
-        args="absspeed/data tilt"/>
+        args="absspeed"/>
+  -->
+  <node pkg="rqt_plot" type="rqt_plot" name="tilt_plot"
+        args="tilt"/>
 
+<!--
   <node pkg="rviz" type="rviz" name="rviz" output="screen"
-        args="--display-config $(find rosmip)/config/rviz_mip.rviz" />
+        args="-display-config $(find rosmip)/config/rviz_mip.rviz" />
+-->
 
   <!-- camera node -->
   <remap from="image_raw" to="rgb"/>

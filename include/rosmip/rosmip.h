@@ -72,6 +72,7 @@ public:
     _speed_sub = _nh_public.subscribe("speed", 1, &Rosmip::speed_cb, this);
     _sound_sub = _nh_public.subscribe("sound", 1, &Rosmip::sound_cb, this);
     _cmd_vel_sub = _nh_public.subscribe("cmd_vel", 1, &Rosmip::cmd_vel_cb, this);
+    _sharp_turn_sub = _nh_public.subscribe("sharp_turn", 1, &Rosmip::sharp_turn_cb, this);
 
     play_sound(23); // oh yeah
   }
@@ -116,10 +117,17 @@ protected:
   //////////////////////////////////////////////////////////////////////////////
 
   void cmd_vel_cb(const geometry_msgs::TwistConstPtr & msg) {
+    if (fabs(_last_v) < 1E-2 && fabs(msg->linear.x) < 1E-2
+        && fabs(_last_w) < 1E-2 && fabs(msg->angular.z) < 1E-2) // do not pollute with "stop"
+      return;
     _last_v = msg->linear.x;
     _last_w = msg->angular.z;
     continuous_drive_metric(_last_v, _last_w);
   }
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  void sharp_turn_cb(const std_msgs::Float32Ptr & msg) { angle_drive(msg->data, 20); }
 
   //////////////////////////////////////////////////////////////////////////////
 
@@ -281,7 +289,7 @@ protected:
   ros::Publisher _odometer_reading_pub, _absspeed_pub, _tilt_pub, _odom_pub;
   tf::TransformBroadcaster odom_broadcaster;
   // subscribers
-  ros::Subscriber _cmd_vel_sub, _speed_sub, _sound_sub;
+  ros::Subscriber _cmd_vel_sub, _speed_sub, _sound_sub, _sharp_turn_sub;
 }; // end class Rosmip
 
 #endif // ROSMIP_H
