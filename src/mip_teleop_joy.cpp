@@ -72,7 +72,7 @@ void joy_cb(const sensor_msgs::Joy::ConstPtr& joy) {
   }
   sound_before = joy->buttons[button_sound];
 
-  // default: move robot with directions
+  // if no command was sent till here: move robot with directions of axes
   if (command_sent)
     return;
   geometry_msgs::Twist vel;
