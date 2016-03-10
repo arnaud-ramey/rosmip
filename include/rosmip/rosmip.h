@@ -31,7 +31,9 @@ ________________________________________________________________________________
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/Int16.h>
+#include <std_msgs/Int8MultiArray.h>
 #include <std_msgs/String.h>
 #include <tf/transform_broadcaster.h>
 // libmip
@@ -69,8 +71,9 @@ public:
     _absspeed_pub = _nh_public.advertise<std_msgs::Float32>("absspeed", 1);
     _tilt_pub = _nh_public.advertise<std_msgs::Int16>("tilt", 1);
     // create subscribers
-    _speed_sub = _nh_public.subscribe("speed", 1, &Rosmip::speed_cb, this);
     _sound_sub = _nh_public.subscribe("sound", 1, &Rosmip::sound_cb, this);
+    _chest_led_sub = _nh_public.subscribe("chest_led", 1, &Rosmip::chest_led_cb, this);
+    _chest_led_blink_sub = _nh_public.subscribe("chest_led_blink", 1, &Rosmip::chest_led_blink_cb, this);
     _cmd_vel_sub = _nh_public.subscribe("cmd_vel", 1, &Rosmip::cmd_vel_cb, this);
     _sharp_turn_sub = _nh_public.subscribe("sharp_turn", 1, &Rosmip::sharp_turn_cb, this);
 
@@ -270,6 +273,23 @@ protected:
 
   //////////////////////////////////////////////////////////////////////////////
 
+  void chest_led_cb(const std_msgs::Int8MultiArrayConstPtr & msg) {
+    if (msg->data.size() == 3)
+      set_chest_LED(msg->data[0], msg->data[1], msg->data[2]);
+  } // end chest_led_cb();
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  void chest_led_blink_cb(const std_msgs::Float32MultiArrayConstPtr & msg) {
+    if (msg->data.size() == 5)
+      set_chest_LED(msg->data[0], msg->data[1], msg->data[2],
+          msg->data[3], msg->data[4]);
+    else ROS_WARN("chest_led_blink_cb(): incorrect data size %i",
+                  msg->data.size());
+  } // end chest_led_blink_cb();
+
+  //////////////////////////////////////////////////////////////////////////////
+
   GMainLoop *main_loop;
   ros::NodeHandle _nh_public, _nh_private;
   ros::Time _status_battery_request_stamp;
@@ -289,7 +309,8 @@ protected:
   ros::Publisher _odometer_reading_pub, _absspeed_pub, _tilt_pub, _odom_pub;
   tf::TransformBroadcaster odom_broadcaster;
   // subscribers
-  ros::Subscriber _cmd_vel_sub, _speed_sub, _sound_sub, _sharp_turn_sub;
+  ros::Subscriber _cmd_vel_sub, _sound_sub, _sharp_turn_sub,
+  _chest_led_sub, _chest_led_blink_sub;
 }; // end class Rosmip
 
 #endif // ROSMIP_H
