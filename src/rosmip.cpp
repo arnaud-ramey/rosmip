@@ -19,24 +19,6 @@ Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ________________________________________________________________________________
-
-\class Rosmip
-  The interface between "libmip" and ROS.
-
-\section Parameters
-  - \b "foo"
-        [string] (default: "bar")
-        Description of the parameter.
-
-\section Subscriptions
-  - \b "/foo"
-        [xxx]
-        Descrption of the subscription
-
-\section Publications
-  - \b "~foo"
-        [xxx]
-        Descrption of the publication
  */
 #include <rosmip/rosmip.h>
 int main(int argc, char **argv) {

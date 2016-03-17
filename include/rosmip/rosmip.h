@@ -22,7 +22,6 @@ ________________________________________________________________________________
 
 \class Rosmip
   The interface between "libmip" and ROS.
-\see rosmip.cpp for detailed topics and params.
  */
 #ifndef ROSMIP_H
 #define ROSMIP_H
