@@ -2,7 +2,9 @@
 
 <p align="center">
 <img src="https://github.com/arnaud-ramey/libmip/raw/master/doc/MiP.png"
-   alt="MiP" style="width: 300px"/>
+   alt="MiP" style="width: 200px"/>
+<img src="https://github.com/arnaud-ramey/rosmip/raw/master/doc/ros_indigoigloo_600.png"
+   alt="MiP" style="width: 200px"/>
 </p>
 
 Description
