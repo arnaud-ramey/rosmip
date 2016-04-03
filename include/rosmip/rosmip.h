@@ -85,7 +85,6 @@ public:
 
   ~Rosmip() {
     play_sound(19); // see ya
-    pump_up_callbacks();
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -111,7 +110,6 @@ public:
     }
     if ((now - _last_odometry_pub_stamp).toSec() > .1) // 10 Hz
       refresh_odometry_tf(now);
-    pump_up_callbacks();
     return true;
   } // end spinOnce()
 
