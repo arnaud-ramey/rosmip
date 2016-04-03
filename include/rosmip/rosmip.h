@@ -227,37 +227,6 @@ protected:
   } // end notification_post_hook();
 
   //////////////////////////////////////////////////////////////////////////////
-  //! https://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
-  template <typename T> int signum(const T val) {
-    return (val >= T(0)? 1 : -1);
-  }
-
-  bool speed2ticks(const double & v_ms, const double & w_rads,
-                   int & v_int, int & w_int) {
-    if (fabs(v_ms) > .95 || fabs(w_rads) > 17) {
-      ROS_WARN("(v:%g, w:%g) out of bounds!", v_ms, w_rads);
-      return false;
-    }
-    // v
-    if (fabs(v_ms) < 0.01)
-      v_int = 0;
-    else if (fabs(v_ms) < 0.7) // NORMAL: v = 0.0217453422621 * b1
-      v_int = clamp(45.98685952820811545096 * v_ms, -32, 32);
-    else // CRAZY: v = 0.0290682838088 * b1
-      v_int = clamp(34.40175576162719827641 * v_ms, -32, 32) + 32 * signum(v_ms);
-    // w
-    if (fabs(w_rads) < 0.2)
-      w_int = 0;
-    else if (fabs(w_rads) < 13) // NORMAL: w = 0.4177416860037 * b2 - 0.6876060987078
-      w_int = clamp(2.39382382344084006941 * w_rads + 1.6460078602299454762, -32, 32);
-    else // CRAZY: W = 0.7208400618386 * b2 + 0.0191642762841
-      w_int = clamp(1.38727028773812161461 * w_rads - 0.02658603107493626709, -32, 32)
-          + 32 * signum(w_rads);
-    printf("speed2ticks(%g, %g) -> (%i, %i)\n", v_ms, w_rads, v_int, w_int);
-    return true;
-  } // end speed2ticks
-
-  //////////////////////////////////////////////////////////////////////////////
 
   void speed_cb(const geometry_msgs::TwistConstPtr & msg) {
     int v_int, w_int;
