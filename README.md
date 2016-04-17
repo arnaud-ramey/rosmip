@@ -1,5 +1,7 @@
 # rosmip
 
+[![Build Status](https://travis-ci.org/arnaud-ramey/rosmip.svg)](https://travis-ci.org/arnaud-ramey/rosmip)
+
 <p align="center">
 <img src="doc/MiP.png" alt="MiP" style="width: 200px"/>
 <img src="doc/ros_indigoigloo_600.png" alt="MiP" style="width: 200px"/>
