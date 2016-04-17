@@ -23,5 +23,4 @@ before_script: # Use this to prepare your build for testing e.g. copy database c
 
 script: # compile
   - cd ~/catkin_ws
-  - source devel/setup.bash
   - catkin_make
