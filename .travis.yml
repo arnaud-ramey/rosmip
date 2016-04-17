@@ -21,7 +21,7 @@ before_script: # Use this to prepare your build for testing e.g. copy database c
   - catkin_init_workspace
   - ln -s $CI_SOURCE_PATH . # Link the repo we are testing to the new workspace
 
-script:
+script: # compile
   - cd ~/catkin_ws
   - source devel/setup.bash
   - catkin_make
