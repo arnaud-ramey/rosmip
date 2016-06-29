@@ -10,11 +10,19 @@
   <license>GPLv2</license>
   <!-- dependencies -->
   <buildtool_depend>catkin</buildtool_depend>
-  <depend>roscpp</depend>
-  <depend>roslib</depend>
-  <depend>nav_msgs</depend>
+  <!-- Ubuntu packages dependencies:
+       get the keys using "rosdep db"  -->
+  <depend>libbluetooth-dev</depend>
+  <depend>libglib-dev</depend>
+  <depend>libncurses-dev</depend>
+  <!-- ROS dependencies -->
   <depend>std_msgs</depend>
+  <depend>roscpp</depend>
   <depend>tf</depend>
+<!--
+  <depend>nav_msgs</depend>
+  <depend>roslib</depend>
+-->
   <export>
         <rosdoc config="rosdoc.yaml" /> <!-- http://wiki.ros.org/rosdoc_lite -->
       <cpp cflags="-I${prefix} -I${prefix}/build"

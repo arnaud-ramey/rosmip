@@ -190,23 +190,21 @@ It is based on the [`joy`](http://wiki.ros.org/joy) package.
 Installation
 ============
 
-Dependencies
-------------
+## 1. Dependencies included in the Ubuntu packages
 
-You need the following libraries before compiling :
+Please run the [rosdep](http://docs.ros.org/independent/api/rosdep/html/) utility:
 
-  * cmake  ( `sudo apt-get install cmake` )
-  * glib   ( `sudo apt-get install libglib2.0-dev` )
-  * bluez  ( `sudo apt-get install libbluetooth-dev` )
-  * curses ( `sudo apt-get install libncurses5-dev` )
-  * rfkill ( `sudo apt-get install rfkill` )
+```bash
+$ sudo apt-get install python-rosdep
+$ sudo rosdep init
+$ rosdep install rosmip --ignore-src
+```
 
 The [libgatt](https://github.com/jacklund/libgatt) library is
 embedded into the project
 and does not require any specific installation.
 
-Build rosmip
--------------
+## 2. Compile rosmip
 
 ```bash
 $ catkin_make --only-pkg-with-deps rosmip
