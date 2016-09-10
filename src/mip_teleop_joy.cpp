@@ -30,8 +30,8 @@ A simple node for teleoperating the mip
 #include <geometry_msgs/Twist.h>
 #include <ros/ros.h>
 
-int axis_linear = 1, axis_angular = 2, axis_90turn = 3, axis_180turn = 4;
-int button_sound = 2;
+int axis_linear = 1, axis_angular = 2, axis_90turn = 3, axis_180turn = 4, maxaxis = -1;
+int button_sound = 2, maxbutton = -1;
 double scale_linear = 1.0, scale_angular = 1.0;
 bool axis_90before = false, axis_180before = false;
 bool sound_before = false;
@@ -42,6 +42,15 @@ ros::Publisher cmd_vel_pub, sharp_turn_pub, sound_pub;
 ////////////////////////////////////////////////////////////////////////////////
 
 void joy_cb(const sensor_msgs::Joy::ConstPtr& joy) {
+  int naxes = joy->axes.size(), nbuttons = joy->buttons.size();
+  if (naxes <= maxaxis) {
+    ROS_WARN("joy_cb(): expected at least %i axes, got %i!", maxaxis+1, naxes);
+    return;
+  }
+  if (nbuttons <= maxbutton) {
+    ROS_WARN("joy_cb(): expected at least %i buttons, got %i!", maxbutton+1, naxes);
+    return;
+  }
   bool command_sent = false;
   // sharp turns at 90°
   bool axis_90now = fabs(joy->axes[axis_90turn]) > 0.9;
@@ -95,6 +104,8 @@ int main(int argc, char* argv[]) {
   nh_private.param("scale_linear", scale_linear, scale_linear);
   nh_private.param("scale_angular", scale_angular, scale_angular);
   nh_private.param("button_sound", button_sound, button_sound);
+  maxaxis = std::max(axis_linear, std::max(axis_angular, std::max(axis_90turn, axis_180turn)));
+  maxbutton = button_sound;
   // subscribers
   ros::Subscriber joy_sub = nh_public.subscribe<sensor_msgs::Joy>("joy", 1,  joy_cb);
   // publishers
