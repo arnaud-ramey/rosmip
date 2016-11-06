@@ -30,11 +30,13 @@ A simple node for teleoperating the mip
 #include <geometry_msgs/Twist.h>
 #include <ros/ros.h>
 
-int axis_linear = 1, axis_angular = 2, axis_90turn = 3, axis_180turn = 4, maxaxis = -1;
-int button_sound = 2, maxbutton = -1;
+int axis_linear = -1, axis_angular = -1;
+int button_90left = -1, button_90right= -1, button_180turn = -1, button_360turn = -1;
+int axis_90turn = -1, axis_180_360turn = -1;
+int button_deadman = -1, button_sound = -1;
 double scale_linear = 1.0, scale_angular = 1.0;
-bool axis_90before = false, axis_180before = false;
-bool sound_before = false;
+double offset_linear = 0.0, offset_angular = 0.0;
+bool sharp_turn_before = false, sound_before = false;
 std_msgs::String string_msg;
 std_msgs::Int16 int_msg;
 ros::Publisher cmd_vel_pub, sharp_turn_pub, sound_pub;
@@ -43,50 +45,65 @@ ros::Publisher cmd_vel_pub, sharp_turn_pub, sound_pub;
 
 void joy_cb(const sensor_msgs::Joy::ConstPtr& joy) {
   int naxes = joy->axes.size(), nbuttons = joy->buttons.size();
-  if (naxes <= maxaxis) {
-    ROS_WARN("joy_cb(): expected at least %i axes, got %i!", maxaxis+1, naxes);
+  bool command_sent = false,
+      deadman_ok = (button_deadman < 0
+                    || (nbuttons > button_deadman && joy->buttons[button_deadman]));
+  if (!deadman_ok) {
+    ROS_INFO_THROTTLE(10, "Dead man button %i is not pressed, sending a 0 speed order.", button_deadman);
+    geometry_msgs::Twist vel;
+    cmd_vel_pub.publish(vel);
     return;
   }
-  if (nbuttons <= maxbutton) {
-    ROS_WARN("joy_cb(): expected at least %i buttons, got %i!", maxbutton+1, naxes);
-    return;
-  }
-  bool command_sent = false;
   // sharp turns at 90°
-  bool axis_90now = fabs(joy->axes[axis_90turn]) > 0.9;
-  if (axis_90now && !axis_90before) {
-    std_msgs::Float32 msg;
-    msg.data = (joy->axes[axis_90turn] < 0 ? M_PI_2 : -M_PI_2);
-    sharp_turn_pub.publish(msg);
-    command_sent = true;
-  }
-  axis_90before = axis_90now;
-
+  bool left90now = (button_90left >= 0 && button_90left < nbuttons
+                    && joy->buttons[button_90left]);
+  bool right90now = (button_90right >= 0 && button_90right < nbuttons
+                     && joy->buttons[button_90right]);
+  bool axis90now = (axis_90turn >= 0 && axis_90turn < naxes
+                    && fabs(joy->axes[axis_90turn]) > 0.9);
   // sharp turns at 180°
-  bool axis_180now = fabs(joy->axes[axis_180turn]) > 0.9;
-  if (axis_180now && !axis_180before) {
+  bool button_180now = (button_180turn >= 0 && button_180turn < nbuttons
+                      && joy->buttons[button_180turn]);
+  bool button_360now = (button_360turn >= 0 && button_360turn < nbuttons
+                      && joy->buttons[button_360turn]);
+  bool axis_180_360now = (axis_180_360turn >= 0 && axis_180_360turn < naxes
+                          && fabs(joy->axes[axis_180_360turn]) > 0.9);
+  bool sharp_turn_now = left90now || right90now || axis90now
+      || button_180now || button_360now || axis_180_360now;
+  if (sharp_turn_now && !sharp_turn_before) {
     std_msgs::Float32 msg;
-    msg.data = (joy->axes[axis_180turn] > 0 ? 2 * M_PI : -M_PI);
+    if (left90now)            msg.data = -M_PI_2;
+    else if (right90now)      msg.data = M_PI_2;
+    else if (axis90now)       msg.data = (joy->axes[axis_90turn] < 0 ? M_PI_2 : -M_PI_2);
+    else if (button_180now)   msg.data = -M_PI;
+    else if (button_360now)   msg.data = 2 * M_PI;
+    else if (axis_180_360now) msg.data = (joy->axes[axis_180_360turn] > 0 ? 2 * M_PI : -M_PI);
+    ROS_INFO("Starting sharp turm of %i degrees!", (int)(msg.data * 180 / M_PI));
+    //  ROS_INFO("%i %i %i %i %i %i", left90now, right90now, axis90now
+    //          , button_180now, button_360now, axis_180_360now);
     sharp_turn_pub.publish(msg);
     command_sent = true;
   }
-  axis_180before = axis_180now;
+  sharp_turn_before = sharp_turn_now;
 
   // sounds
-  if (joy->buttons[button_sound] && !sound_before) {
+  bool sound_now = button_sound < nbuttons && joy->buttons[button_sound];
+  if (sound_now && !sound_before) {
     int_msg.data = 103; // laser sound
     sound_pub.publish(int_msg);
-    sound_before = joy->buttons[button_sound];
+    ROS_INFO("Starting sound!");
     command_sent = true;
   }
-  sound_before = joy->buttons[button_sound];
+  sound_before = sound_now;
 
   // if no command was sent till here: move robot with directions of axes
   if (command_sent)
     return;
   geometry_msgs::Twist vel;
-  vel.linear.x = (joy->axes[axis_linear] * scale_linear);
-  vel.angular.z = (joy->axes[axis_angular] * scale_angular);
+  if (axis_linear < naxes)
+    vel.linear.x = ((joy->axes[axis_linear]-offset_linear) * scale_linear);
+  if (axis_angular < naxes)
+    vel.angular.z = ((joy->axes[axis_angular]-offset_angular) * scale_angular);
   cmd_vel_pub.publish(vel);
 
 } // end joy_cb();
@@ -97,15 +114,20 @@ int main(int argc, char* argv[]) {
   ros::init(argc, argv, "mip_teleop_joy");
   ros::NodeHandle nh_public, nh_private("~");
   // params
-  nh_private.param("axis_linear", axis_linear, axis_linear);
-  nh_private.param("axis_angular", axis_angular, axis_angular);
+  nh_private.param("axis_180_360turn", axis_180_360turn, axis_180_360turn);
   nh_private.param("axis_90turn", axis_90turn, axis_90turn);
-  nh_private.param("axis_180turn", axis_180turn, axis_180turn);
-  nh_private.param("scale_linear", scale_linear, scale_linear);
-  nh_private.param("scale_angular", scale_angular, scale_angular);
+  nh_private.param("axis_angular", axis_angular, axis_angular);
+  nh_private.param("axis_linear", axis_linear, axis_linear);
+  nh_private.param("button_180turn", button_180turn, button_180turn);
+  nh_private.param("button_360turn", button_360turn, button_360turn);
+  nh_private.param("button_90left", button_90left, button_90left);
+  nh_private.param("button_90right", button_90right, button_90right);
+  nh_private.param("button_deadman", button_deadman, button_deadman);
   nh_private.param("button_sound", button_sound, button_sound);
-  maxaxis = std::max(axis_linear, std::max(axis_angular, std::max(axis_90turn, axis_180turn)));
-  maxbutton = button_sound;
+  nh_private.param("offset_angular", offset_angular, offset_angular);
+  nh_private.param("offset_linear", offset_linear, offset_linear);
+  nh_private.param("scale_angular", scale_angular, scale_angular);
+  nh_private.param("scale_linear", scale_linear, scale_linear);
   // subscribers
   ros::Subscriber joy_sub = nh_public.subscribe<sensor_msgs::Joy>("joy", 1,  joy_cb);
   // publishers
