@@ -8,14 +8,13 @@
   </node>
 
   <!-- MIP specific teleoperation driver -->
-  <node pkg="rosmip" type="mip_teleop_joy.exe" name="teleop" output="screen">
-    <param name="axis_180_360turn" value="5"/>
-    <param name="axis_90turn" value="4"/>
-    <param name="axis_angular" value="0"/>
-    <param name="axis_linear" value="3"/>
-    <param name="button_sound" value="5"/>
-    <param name="scale_angular" value="2.5"/>
-    <param name="scale_linear" value=".9"/>
-  </node>
+  <param name="axis_180_360turn" value="5"/>
+  <param name="axis_90turn" value="4"/>
+  <param name="axis_angular" value="0"/>
+  <param name="axis_linear" value="3"/>
+  <param name="button_sound" value="5"/>
+  <param name="scale_angular" value="2.5"/>
+  <param name="scale_linear" value=".9"/>
+  <node pkg="rosmip" type="mip_teleop_joy.exe" name="teleop" output="screen"/>
 </group>
 </launch>

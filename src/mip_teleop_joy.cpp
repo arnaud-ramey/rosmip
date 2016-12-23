@@ -114,20 +114,20 @@ int main(int argc, char* argv[]) {
   ros::init(argc, argv, "mip_teleop_joy");
   ros::NodeHandle nh_public, nh_private("~");
   // params
-  nh_private.param("axis_180_360turn", axis_180_360turn, axis_180_360turn);
-  nh_private.param("axis_90turn", axis_90turn, axis_90turn);
-  nh_private.param("axis_angular", axis_angular, axis_angular);
-  nh_private.param("axis_linear", axis_linear, axis_linear);
-  nh_private.param("button_180turn", button_180turn, button_180turn);
-  nh_private.param("button_360turn", button_360turn, button_360turn);
-  nh_private.param("button_90left", button_90left, button_90left);
-  nh_private.param("button_90right", button_90right, button_90right);
-  nh_private.param("button_deadman", button_deadman, button_deadman);
-  nh_private.param("button_sound", button_sound, button_sound);
-  nh_private.param("offset_angular", offset_angular, offset_angular);
-  nh_private.param("offset_linear", offset_linear, offset_linear);
-  nh_private.param("scale_angular", scale_angular, scale_angular);
-  nh_private.param("scale_linear", scale_linear, scale_linear);
+  nh_public.param("axis_180_360turn", axis_180_360turn, axis_180_360turn);
+  nh_public.param("axis_90turn", axis_90turn, axis_90turn);
+  nh_public.param("axis_angular", axis_angular, axis_angular);
+  nh_public.param("axis_linear", axis_linear, axis_linear);
+  nh_public.param("button_180turn", button_180turn, button_180turn);
+  nh_public.param("button_360turn", button_360turn, button_360turn);
+  nh_public.param("button_90left", button_90left, button_90left);
+  nh_public.param("button_90right", button_90right, button_90right);
+  nh_public.param("button_deadman", button_deadman, button_deadman);
+  nh_public.param("button_sound", button_sound, button_sound);
+  nh_public.param("offset_angular", offset_angular, offset_angular);
+  nh_public.param("offset_linear", offset_linear, offset_linear);
+  nh_public.param("scale_angular", scale_angular, scale_angular);
+  nh_public.param("scale_linear", scale_linear, scale_linear);
   // subscribers
   ros::Subscriber joy_sub = nh_public.subscribe<sensor_msgs::Joy>("joy", 1,  joy_cb);
   // publishers
