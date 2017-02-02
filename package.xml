@@ -7,7 +7,7 @@
       The interface between "libmip" and ROS.
   </description>
   <maintainer email="arnaud.a.ramey@gmail.com">Arnaud Ramey</maintainer>
-  <license>GPLv2</license>
+  <license>LGPLv3</license>
   <!-- dependencies -->
   <buildtool_depend>catkin</buildtool_depend>
   <!-- Ubuntu packages dependencies:
