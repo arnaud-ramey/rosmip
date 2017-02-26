@@ -1,7 +1,8 @@
 <launch>
 <arg name="robot" default="rosmip" />
+<arg name="output" default="screen" />
 <group ns="$(arg robot)">
-  <node pkg="rosmip" type="rosmip.exe" name="driver" respawn="true" output="screen"
+  <node pkg="rosmip" type="rosmip.exe" name="driver" respawn="true" output="$(arg output)"
         args="_device_mac:=00:19:0E:16:AF:22  _mip_mac:=D0:39:72:B7:AF:66
               _use_odometry_speed:=true" />
 </group>
