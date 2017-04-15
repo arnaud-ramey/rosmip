@@ -18,6 +18,7 @@
   <!-- ROS dependencies -->
   <depend>std_msgs</depend>
   <depend>roscpp</depend>
+  <depend>roslib</depend>
   <depend>tf</depend>
   <export>
     <rosdoc config="rosdoc.yaml" /> <!-- http://wiki.ros.org/rosdoc_lite -->

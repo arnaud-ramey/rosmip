@@ -5,7 +5,7 @@ project(rosmip)
 SET(CMAKE_BUILD_TYPE RelWithDebInfo) #None Debug Release RelWithDebInfo MinSizeRel
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra") # add extra warnings
 ### 3 - Find other CMake/Catkin packages needed for build
-SET(ROSDEPS std_msgs roscpp tf)
+SET(ROSDEPS std_msgs  roscpp  roslib  tf)
 find_package(catkin REQUIRED COMPONENTS ${ROSDEPS})
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/third_parties/libmip)
 find_package( GLIB REQUIRED )
