@@ -90,11 +90,12 @@ Subscriptions
   and the time during which the light is OFF.
 
 - `chest_led`
-  [std_msgs::UInt8MultiArray, size:3 [r:0~255, g:0~255, b::0~255] ]
+  [std_msgs::ColorRGBA, [r:0~1, g:0~1, b::0~1] ]
 
   Set the color of the chest.
   The color is encoded as a RGB triplet (r, g, b),
-  where each component is in 0~255.
+  where each component is in 0~1.
+  The a (alpha) component is not used here.
 
 - `cmd_vel`
   [geometry_msgs::Twist, (m/s, rad/s)]

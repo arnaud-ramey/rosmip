@@ -29,11 +29,13 @@ ________________________________________________________________________________
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/ColorRGBA.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/Int16.h>
-#include <std_msgs/UInt8MultiArray.h>
 #include <std_msgs/String.h>
+#include <std_msgs/UInt8MultiArray.h>
 #include <tf/transform_broadcaster.h>
 // libmip
 #include "libmip/src/bluetooth_mac2device.h"
@@ -74,6 +76,10 @@ public:
     _chest_led_sub = _nh_public.subscribe("chest_led", 1, &Rosmip::chest_led_cb, this);
     _chest_led_blink_sub = _nh_public.subscribe("chest_led_blink", 1, &Rosmip::chest_led_blink_cb, this);
     _head_led_sub = _nh_public.subscribe("head_led", 1, &Rosmip::head_led_cb, this);
+    _head_led1_sub = _nh_public.subscribe("head_led1", 1, &Rosmip::head_led1_cb, this);
+    _head_led2_sub = _nh_public.subscribe("head_led2", 1, &Rosmip::head_led2_cb, this);
+    _head_led3_sub = _nh_public.subscribe("head_led3", 1, &Rosmip::head_led3_cb, this);
+    _head_led4_sub = _nh_public.subscribe("head_led4", 1, &Rosmip::head_led4_cb, this);
     _cmd_vel_sub = _nh_public.subscribe("cmd_vel", 1, &Rosmip::cmd_vel_cb, this);
     _sharp_turn_sub = _nh_public.subscribe("sharp_turn", 1, &Rosmip::sharp_turn_cb, this);
     _sharp_turn_speed_sub = _nh_public.subscribe("sharp_turn_speed", 1, &Rosmip::sharp_turn_speed_cb, this);
@@ -134,7 +140,7 @@ protected:
   void sharp_turn_speed_cb(const std_msgs::Float32MultiArrayConstPtr & msg) {
     if (msg->data.size() == 2)
       angle_drive(msg->data[0], msg->data[1]);
-    else ROS_WARN("sharp_turn_cb(): incorrect data size %i",
+    else ROS_WARN("sharp_turn_cb(): incorrect data size %li",
                   msg->data.size());
   }
 
@@ -248,9 +254,8 @@ protected:
 
   //////////////////////////////////////////////////////////////////////////////
 
-  void chest_led_cb(const std_msgs::UInt8MultiArrayConstPtr & msg) {
-    if (msg->data.size() == 3)
-      set_chest_LED(msg->data[0], msg->data[1], msg->data[2]);
+  void chest_led_cb(const std_msgs::ColorRGBAConstPtr & msg) {
+    set_chest_LED(255 * msg->r, 255 * msg->g, 255 * msg->b);
   } // end chest_led_cb();
 
   //////////////////////////////////////////////////////////////////////////////
@@ -260,7 +265,7 @@ protected:
     if (msg->data.size() == 5)
       set_chest_LED(msg->data[0], msg->data[1], msg->data[2],
           msg->data[3], msg->data[4]);
-    else ROS_WARN("chest_led_blink_cb(): incorrect data size %i",
+    else ROS_WARN("chest_led_blink_cb(): incorrect data size %li",
                   msg->data.size());
   } // end chest_led_blink_cb();
 
@@ -270,6 +275,13 @@ protected:
     if (msg->data.size() == 4)
       set_head_LED(msg->data[0], msg->data[1], msg->data[2], msg->data[3]);
   } // end head_led_cb();
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  void head_led1_cb(const std_msgs::BoolConstPtr & msg) { set_head_LED(1, msg->data); }
+  void head_led2_cb(const std_msgs::BoolConstPtr & msg) { set_head_LED(2, msg->data); }
+  void head_led3_cb(const std_msgs::BoolConstPtr & msg) { set_head_LED(3, msg->data); }
+  void head_led4_cb(const std_msgs::BoolConstPtr & msg) { set_head_LED(4, msg->data); }
 
   //////////////////////////////////////////////////////////////////////////////
 
@@ -293,7 +305,8 @@ protected:
   tf::TransformBroadcaster odom_broadcaster;
   // subscribers
   ros::Subscriber _cmd_vel_sub, _sound_sub, _sharp_turn_sub, _sharp_turn_speed_sub,
-  _chest_led_sub, _chest_led_blink_sub, _head_led_sub;
+  _chest_led_sub, _chest_led_blink_sub,
+  _head_led_sub, _head_led1_sub, _head_led2_sub, _head_led3_sub, _head_led4_sub;
 }; // end class Rosmip
 
 #endif // ROSMIP_H

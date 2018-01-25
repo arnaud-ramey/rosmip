@@ -1,6 +1,6 @@
 <launch>
 <arg name="robot" default="rosmip" />
-<arg name="device" default="/dev/input/js1" />
+<arg name="device" default="/dev/input/js0" />
 <group ns="$(arg robot)">
   <!-- Driver for the joystick. -->
   <node pkg="joy" type="joy_node" name="joy" output="screen" >
@@ -15,7 +15,7 @@
   <param name="axis_linear" value="3"/>
   <param name="button_sound" value="5"/>
   <param name="scale_angular" value="2.5"/>
-  <param name="scale_linear" value=".9"/>
+  <param name="scale_linear" value=".7"/>
   <node pkg="rosmip" type="mip_teleop_joy.exe" name="teleop" output="screen"/>
 </group>
 </launch>
